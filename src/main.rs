@@ -10,11 +10,15 @@ fn main() {
 }
 
 fn handle(mut stream: TcpStream) {
+    let mut clone = stream.try_clone().unwrap();
     let buf_reader = BufReader::new(&mut stream);
-    let request_line = buf_reader
-        .lines()
-        .next();
 
+    let request_line =  buf_reader.lines().next();
     println!("lines: {:?}", request_line);
-    stream.write_all("hello\n".as_bytes()).unwrap();
+    clone.write_all("world\n".as_bytes()).unwrap();
+
+    // while let Some(request_line) = buf_reader.lines().next() {
+    //     println!("lines: {:?}", request_line);
+    //     clone.write_all("world\n".as_bytes()).unwrap();
+    // }
 }
