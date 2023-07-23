@@ -10,15 +10,17 @@ fn main() {
 }
 
 fn handle(mut stream: TcpStream) {
-    let mut clone = stream.try_clone().unwrap();
+    let mut writer = stream.try_clone().unwrap();
     let buf_reader = BufReader::new(&mut stream);
 
-    let request_line =  buf_reader.lines().next();
-    println!("lines: {:?}", request_line);
-    clone.write_all("world\n".as_bytes()).unwrap();
+    let response = format!(
+        "HTTP/1.1 200 OK\r\n\
+        Content-Length: 0\r\n\r\n\
+        "
+    );
+    for line in buf_reader.lines() {
+        println!("lines: {:?}", line);
+        writer.write_all(response.as_bytes()).unwrap();
+    }
 
-    // while let Some(request_line) = buf_reader.lines().next() {
-    //     println!("lines: {:?}", request_line);
-    //     clone.write_all("world\n".as_bytes()).unwrap();
-    // }
 }
