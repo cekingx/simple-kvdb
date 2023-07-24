@@ -1,40 +1,47 @@
-use std::{net::{TcpListener, TcpStream}, io::{BufReader, prelude::*, BufWriter}, str};
+use std::{net::{TcpListener, TcpStream}, io::{BufReader, prelude::*}, collections::HashMap};
+
+type Database = HashMap<String, String>;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let db = HashMap::new();
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle(stream);
+        let db = db.clone();
+        handle(db, stream);
     }
 }
 
-// fn handle(mut stream: TcpStream) {
-//     let mut writer = stream.try_clone().unwrap();
-//     let buf_reader = BufReader::new(&mut stream);
+fn handle(mut db: Database, mut stream: TcpStream) {
+    let mut writer = stream.try_clone().unwrap();
+    let buf_reader = BufReader::new(&mut stream);
 
-//     let response = format!(
-//         "HTTP/1.1 200 OK\r\n\
-//         Content-Length: 0\r\n\r\n\
-//         "
-//     );
-//     for line in buf_reader.lines() {
-//         println!("lines: {:?}", line);
-//         writer.write_all(response.as_bytes()).unwrap();
-//     }
-// }
+    for line in buf_reader.lines() {
+        println!("lines: {:?}", line);
+        let result = line.unwrap();
+        let cloned = result.clone();
+        let parsed: Vec<&str> = cloned.split(" ").collect();
 
-fn handle(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
-    let mut clone = stream.try_clone().unwrap();
-    let mut writer = BufWriter::new(&mut clone);
-    stream.read(&mut buffer).unwrap();
-    let x = str::from_utf8(&buffer).unwrap();
-    println!("{}", x);
-    let response = format!(
-        "HTTP/1.1 200 OK\r\n\
-        Content-Length: 0\r\n\r\n\
-        "
-    );
-    writer.write_all(response.as_bytes()).unwrap();
+        if parsed[0] == "set" {
+            db.insert(parsed[1].to_string(), parsed[2].to_string());
+            let response = format!("Ok\n");
+            writer.write_all(response.as_bytes()).unwrap();
+        }
+
+        if parsed[0] == "get" {
+            let result = db.get(parsed[1]);
+            match result {
+                Some(value) => {
+                    let response = format!("{}\n", value.to_string());
+                    writer.write_all(response.as_bytes()).unwrap();
+                }
+                None => {
+                    let response = format!("\n");
+                    writer.write_all(response.as_bytes()).unwrap();
+                }
+            }
+        }
+
+    }
 }
