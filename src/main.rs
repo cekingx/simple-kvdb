@@ -4,16 +4,15 @@ type Database = HashMap<String, String>;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    let db = HashMap::new();
+    let mut db = HashMap::new();
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        let db = db.clone();
-        handle(db, stream);
+        handle(&mut db, stream);
     }
 }
 
-fn handle(mut db: Database, mut stream: TcpStream) {
+fn handle(db: &mut Database, mut stream: TcpStream) {
     let mut writer = stream.try_clone().unwrap();
     let buf_reader = BufReader::new(&mut stream);
 
